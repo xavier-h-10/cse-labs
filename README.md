@@ -1,2 +1,2 @@
-# cse-labs
- Labs for CSE Fall 2021.
+# cse-2021-fall
+
