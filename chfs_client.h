@@ -38,7 +38,8 @@ private:
 
     static inum n2i(std::string);
 
-public:
+ public:
+  chfs_client(std::string);
     chfs_client();
 
     chfs_client(std::string, std::string);
