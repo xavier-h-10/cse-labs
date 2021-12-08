@@ -131,6 +131,7 @@ public:
     int max_tx_id;
     std::mutex tx_id_mtx;
 
+
 private:
     static int default_dispatch(const int key, int shard_num) {
         int shard_offset = key % shard_num;

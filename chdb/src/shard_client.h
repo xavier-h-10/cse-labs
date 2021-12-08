@@ -2,13 +2,24 @@
 #include "protocol.h"
 #include "chdb_state_machine.h"
 
-class value_entry {
+//class value_entry {
+//public:
+//    value_entry() {}
+//
+//    value_entry(const value_entry &entry) : value(entry.value) {}
+//
+//    int value;
+//};
+
+class log {
 public:
-    value_entry() {}
+    log() = default;
 
-    value_entry(const value_entry &entry) : value(entry.value) {}
+    log(int key, int val, int old_val) : key(key), val(val), old_val(old_val) {}
 
-    int value;
+    int key;
+    int val;
+    int old_val;
 };
 
 /**
@@ -76,16 +87,27 @@ public:
         return next;
     }
 
-    std::map<int, value_entry> &get_store() {
+    std::map<int, int> &get_store() {
         return this->store[primary_replica];
     }
 
+    inline int get_store_id(int tx_id) {
+        return (tx_id) % (replica_num - 1) + 1;
+    }
+
+    bool active;
     int shard_id;
     int view_server_port;
-    bool active;
     rpc_node *node;
-    std::vector<std::map<int, value_entry>> store;
+    std::vector <std::map<int, int>> store;
     int primary_replica = 0;
-    int replica_num = 5;
+//    int replica_num = 5;
+    int replica_num = 2000;
+    std::mutex mtx;
+
+    // prepare state
+    std::map<int, bool> prepare_state;
+
+//    std::vector <std::vector<log> > logs;
 
 };

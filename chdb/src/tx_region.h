@@ -7,7 +7,8 @@
 class tx_region {
 public:
     tx_region(chdb *db) : db(db),
-                          tx_id(db->next_tx_id()) {
+                          tx_id(db->next_tx_id()),
+                          is_read_only(true) {
         this->tx_begin();
     }
 
@@ -68,4 +69,7 @@ private:
 
     chdb *db;
     const int tx_id;
+    std::mutex mtx;
+
+    bool is_read_only;
 };
