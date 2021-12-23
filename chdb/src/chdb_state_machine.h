@@ -62,7 +62,7 @@ public:
         return std::vector<char>();
     }
 
-    // Apply the snapshot to the state mahine.
+    // Apply the snapshot to the state machine.
     // In Chdb, you don't need to implement this function
     virtual void apply_snapshot(const std::vector<char> &) {}
 };

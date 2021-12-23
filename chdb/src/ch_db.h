@@ -131,6 +131,14 @@ public:
     int max_tx_id;
     std::mutex tx_id_mtx;
 
+    void lock() {
+        tx_id_mtx.lock();
+    }
+
+    void unlock() {
+        tx_id_mtx.unlock();
+    }
+
 
 private:
     static int default_dispatch(const int key, int shard_num) {

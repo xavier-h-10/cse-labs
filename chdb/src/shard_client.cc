@@ -18,8 +18,8 @@ int shard_client::get(chdb_protocol::operation_var var, int &r) {
     if(store[store_id].find(var.key)!=store[store_id].end()) {
         r=store[store_id][var.key];
     }
-    else if (store[primary_replica].find(var.key) != store[primary_replica].end()) {
-        r = store[primary_replica][var.key];
+    else if (store[0].find(var.key) != store[0].end()) {
+        r = store[0][var.key];
     } else {
         r = 0;
     }
@@ -35,7 +35,7 @@ int shard_client::commit(chdb_protocol::commit_var var, int &r) {
     for (auto &kv: store[store_id]) {
         int key = kv.first;
         int val = kv.second;
-        store[primary_replica][key] = val;
+        store[0][key] = val;
     }
     store[store_id].clear();
     mtx.unlock();

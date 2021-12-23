@@ -9,12 +9,14 @@ public:
     tx_region(chdb *db) : db(db),
                           tx_id(db->next_tx_id()),
                           is_read_only(true) {
+        db->lock();
         this->tx_begin();
     }
 
     ~tx_region() {
         if (this->tx_can_commit() == chdb_protocol::prepare_ok) this->tx_commit();
         else this->tx_abort();
+        db->unlock();
     }
 
     /**
@@ -70,6 +72,8 @@ private:
     chdb *db;
     const int tx_id;
     std::mutex mtx;
+
+    std::mutex ts_mtx;
 
     bool is_read_only;
 };

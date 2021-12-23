@@ -12,7 +12,7 @@ int tx_region::put(const int key, const int val) {
     var.key = key;
     var.value = val;
     int r = 0;
-    std::cout << "tx_region::put " << key<<std::endl;
+    std::cout << "tx_region::put " << key<<" "<<val<<std::endl;
     db->shards[num]->put(var, r);
     mtx.unlock();
     return 0;
@@ -57,6 +57,7 @@ int tx_region::tx_begin() {
 
 int tx_region::tx_commit() {
     // TODO: Your code here
+    mtx.lock();
     printf("tx[%d] commit\n", tx_id);
     chdb_protocol::commit_var var;
     var.tx_id = tx_id;
@@ -65,11 +66,13 @@ int tx_region::tx_commit() {
         int r = 0;
         db->shards[i]->commit(var, r);
     }
+    mtx.unlock();
     return 0;
 }
 
 int tx_region::tx_abort() {
     // TODO: Your code here
+    mtx.lock();
     printf("tx[%d] abort\n", tx_id);
     chdb_protocol::rollback_var var;
     var.tx_id = tx_id;
@@ -78,5 +81,6 @@ int tx_region::tx_abort() {
         int r = 0;
         db->shards[i]->rollback(var, r);
     }
+    mtx.unlock();
     return 0;
 }
