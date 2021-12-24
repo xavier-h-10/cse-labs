@@ -4,6 +4,8 @@
 #include "common.h"
 #include "shard_client.h"
 
+#include <cstdio>
+
 
 using shard_dispatch = int (*)(int key, int shard_num);
 using chdb_raft = raft<chdb_state_machine, chdb_command>;
@@ -81,6 +83,9 @@ public:
             vserver->add_shard_client(shard);
             this->shards.push_back(shard);
         }
+
+        std::srand(std::time(nullptr));
+
     }
 
     ~chdb() {
@@ -130,13 +135,41 @@ public:
     std::vector<shard_client *> shards;
     int max_tx_id;
     std::mutex tx_id_mtx;
+    std::mutex map_mtx;
 
-    void lock() {
+    std::map<int, std::mutex> key_mtx;
+    std::map<int, int> key_master;
+
+    void lock_all() {
         tx_id_mtx.lock();
     }
 
-    void unlock() {
+    void unlock_all() {
         tx_id_mtx.unlock();
+    }
+
+    //solve dead_lock
+    void lock(int key, int tx_id) {
+//        printf("ch_db::lock called, key=%d, tx_id=%d\n", key, tx_id);
+        while (true) {
+//            printf("ch_db::lock checkpoint\n");
+            if (key_master.find(key) == key_master.end() || tx_id == key_master[key]) {
+                if (tx_id == key_master[key]) return;
+//                printf("ch_db::lock start to wait, key=%d, tx_id=%d\n", key, tx_id);
+                key_mtx[key].lock();
+                key_master[key] = tx_id;
+                return;
+            } else {
+                int sleep_time = std::rand() % 100 + 50;
+//                printf("ch_db::lock sleep_time=%d, key=%d, tx_id=%d\n", sleep_time, key, tx_id);
+                std::this_thread::sleep_for(std::chrono::milliseconds(sleep_time));
+            }
+        }
+    }
+
+    void unlock(int key) {
+        key_mtx[key].unlock();
+        key_master.erase(key);
     }
 
 

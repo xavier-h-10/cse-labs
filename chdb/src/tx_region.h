@@ -1,5 +1,5 @@
 #include "ch_db.h"
-
+#include <set>
 
 /*
  * tx_region: chdb KV client which supports transaction concurrency control.
@@ -9,14 +9,18 @@ public:
     tx_region(chdb *db) : db(db),
                           tx_id(db->next_tx_id()),
                           is_read_only(true) {
-        db->lock();
+#if BIG_LOCK
+        db->lock_all();
+#endif
         this->tx_begin();
     }
 
     ~tx_region() {
         if (this->tx_can_commit() == chdb_protocol::prepare_ok) this->tx_commit();
         else this->tx_abort();
-        db->unlock();
+#if BIG_LOCK
+        db->unlock_all();
+#endif
     }
 
     /**
@@ -74,6 +78,8 @@ private:
     std::mutex mtx;
 
     std::mutex ts_mtx;
+
+    std::set<int> keys;
 
     bool is_read_only;
 };

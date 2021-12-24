@@ -102,7 +102,7 @@ public:
     std::vector <std::map<int, int>> store;
     int primary_replica = 0;
 //    int replica_num = 5;
-    int replica_num = 2000;
+    int replica_num = 100;
     std::mutex mtx;
 
     // prepare state
