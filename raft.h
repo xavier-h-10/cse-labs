@@ -285,16 +285,17 @@ template<typename state_machine, typename command>
 bool raft<state_machine, command>::new_command(command cmd, int &term, int &index) {
     // Your code here:
 //    std::unique_lock <std::mutex> lock(mtx); // need to check
+
     if (role == leader) {
         term = current_term;
         log_mtx.lock();
         log_entry<command> entry = log_entry<command>(current_term, cmd);
-        logs.push_back(entry);
-        index = logs.size() - 1;
-//        RAFT_LOG("new_command called my_id=%d term=%d index=%d", my_id, current_term, index);
+        storage->write_log(entry);
         log_mtx.unlock();
         return true;
     } else {
+        log_entry<command> entry = log_entry<command>(current_term, cmd);
+        storage->write_log(entry);
         return false;
     }
 }
@@ -349,14 +350,11 @@ void raft<state_machine, command>::handle_request_vote_reply(int target, const r
                                                              const request_vote_reply &reply) {
     // Your code here:
     std::unique_lock <std::mutex> lock(mtx);
-//    RAFT_LOG("handle_request_vote_reply called, target=%d, arg.can_id=%d, arg.term=%d, reply.granted=%d  reply.term=%d",
-//             target, arg.candidate_id, arg.term, reply.vote_granted, reply.term);
     if (reply.vote_granted && role == candidate) {
         votes++;
-//        RAFT_LOG("handle_request_vote_reply: vote increases target=%d id=%d votes=%d", target, my_id, votes);
         int size = num_nodes();
         if (votes >= (size + 1) / 2) {
-//            RAFT_LOG("become leader, votes=%d id=%d", votes, my_id);
+            RAFT_LOG("become leader, votes=%d id=%d", votes, my_id);
             role = leader;
             voted_for = -1;
             votes = 0;
@@ -379,18 +377,10 @@ template<typename state_machine, typename command>
 int raft<state_machine, command>::append_entries(append_entries_args<command> arg, append_entries_reply &reply) {
     // Your code here:
     std::unique_lock <std::mutex> lock(mtx);
-
-//    if (arg.action != 0)
-//        RAFT_LOG(
-//                "raft::append_entries my_id=%d, arg.term=%d, arg.leader_id=%d, arg.action=%d, cur_term=%d, leader_id=%d",
-//                my_id, arg.term,
-//                arg.leader_id, arg.action, current_term, leader_id);
-
     if (arg.term >= current_term) {
         //收到leader的heartbeat时,更新rpc time
         last_received_RPC_time = std::chrono::system_clock::now();
         if (my_id != arg.leader_id && arg.leader_id != leader_id) {
-//            RAFT_LOG("raft::append_entries turn_to_follower my_id=%d leader_id=%d", my_id, arg.leader_id);
             turn_to_follower(arg.term);
             leader_id = arg.leader_id;
         }
@@ -411,25 +401,16 @@ int raft<state_machine, command>::append_entries(append_entries_args<command> ar
                 // contain an entry at prev_log_index, term=prev_log_term
                 if (idx == 0 || (size > idx && logs[idx].term == arg.prev_log_term)) {
                     //删除冲突的log
-//                    RAFT_LOG("raft::append_entries start append my_id=%d logs.size=%d idx=%d", my_id, size, idx);
                     logs.resize(idx + 1);
                     int size_1 = arg.entries.size();
 
                     for (int i = 0; i < size_1; i++) {
                         logs.push_back(arg.entries[i]);
                     }
-//                    RAFT_LOG("raft::append_entries end append my_id=%d logs.size=%d", my_id, (int) logs.size());
                 } else {
                     reply.success = false;
                 }
-//                size=logs.size()-1;
-//
-//                if(arg.leader_commit>commit_index) {
-//                    commit_index=std::min(arg.leader_commit,size);
-//                }
                 reply.index = logs.size() - 1;
-//                RAFT_LOG("raft::append_entries update index my_id=%d logs.size=%d reply.index=%d", my_id,
-//                         (int) logs.size(), reply.index);
 
                 log_mtx.unlock();
                 break;
@@ -438,8 +419,6 @@ int raft<state_machine, command>::append_entries(append_entries_args<command> ar
             case 2: {
                 commit_index = std::max(commit_index, arg.prev_log_index);
                 reply.index = arg.prev_log_index;
-//                RAFT_LOG("raft:append_entries end apply my_id=%d commit_index=%d, reply_index=%d", my_id, commit_index,
-//                         reply.index);
                 break;
             }
         }
@@ -684,23 +663,11 @@ void raft<state_machine, command>::run_background_commit() {
 //                        if(logs[j].term==current_term)      //figure8 think
                         args.entries.push_back(logs[j]);
                     }
-//                    RAFT_LOG("send commit, my_id=%d, target=%d, next_index[i]=%d, index=%d", my_id, i,
-//                             next_index[i], index);
                     thread_pool->addObjJob(this, &raft::send_append_entries, i, args);
 
 //                    mtx.unlock(); //think
                 }
 
-//                if (match_index[i] < last_applied) {
-////                    mtx.lock(); //think
-//                    append_entries_args<command> args;
-//                    args.term = current_term;
-//                    args.leader_id = my_id;
-//                    args.action = 2;
-//                    args.prev_log_index = commit_index;
-////                    RAFT_LOG("send apply, my_id=%d, target=%d", my_id, i);
-//                    thread_pool->addObjJob(this, &raft::send_append_entries, i, args);
-////                    mtx.unlock(); //think
 //                }
             }
 
@@ -743,22 +710,16 @@ void raft<state_machine, command>::run_background_apply() {
         // Your code here:
         log_mtx.lock();
         int tmp;
-//        if(role==leader) tmp=leader_commit_index; else tmp=commit_index;
         tmp = commit_index;
         if (tmp > last_applied) {
             int size = logs.size();
-//            RAFT_LOG("run_background_apply called, my_id=%d last_applied=%d, commit_index=%d log_size=%d", my_id,
-//                     last_applied, tmp, size);
             if (size > tmp) {
                 for (int i = last_applied + 1; i <= tmp; i++) {
-//                    RAFT_LOG("run_background_apply follower apply log i=%d", i);
                     storage->write_log(logs[i]);
                     state->apply_log(logs[i].cmd);
                 }
                 last_applied = tmp;
             }
-//            RAFT_LOG("run_background_apply ended, my_id=%d last_applied=%d, commit_index=%d log_size=%d", my_id,
-//                     last_applied, tmp, size);
 
         }
         log_mtx.unlock();

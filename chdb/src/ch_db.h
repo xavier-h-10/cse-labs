@@ -32,7 +32,20 @@ public:
 
     chdb_raft *leader() const {
         int leader = this->raft_group->check_exact_one_leader();
-        return this->raft_group->nodes[leader];
+        if (leader < 0) {
+            return this->raft_group->nodes[0];
+        } else {
+            return this->raft_group->nodes[leader];
+        }
+    }
+
+    void send_command(chdb_command tmp) {
+        int size = this->raft_group->nodes.size();
+        for (int i = 0; i < size; i++) {
+            int term = 0;
+            int index = 0;
+            this->raft_group->nodes[i]->new_command(tmp, term, index);
+        }
     }
 
 

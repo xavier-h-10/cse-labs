@@ -17,10 +17,11 @@ int tx_region::put(const int key, const int val) {
 //        printf("tx_region::lock, key=%d tx_id=%d\n", key, tx_id);
         db->lock(key, tx_id);
         db->shards[num]->put(var, r);
-     //   this->db->vserver->execute(key,chdb_protocol::Put,chdb_protocol::operation_var(tx_id,key,val),r);
+        this->db->vserver->execute(key, chdb_protocol::Put, get_operation(tx_id, key, val), r);
         keys.insert(key);
     } else {
         db->shards[num]->put(var, r);
+        this->db->vserver->execute(key, chdb_protocol::Put, get_operation(tx_id, key, val), r);
     }
 //    printf("tx_region::put completed key=%d val=%d tx_id=%d\n", key, val, tx_id);
     mtx.unlock();
@@ -36,15 +37,18 @@ int tx_region::get(const int key) {
     var.key = key;
     var.value = 0;
     int r = 0;
+    int value = 0;
 //    printf("tx_region::get key=%d tx_id=%d\n", key, tx_id);
 
     if (BIG_LOCK == 0) {
 //        printf("tx_region::lock, key=%d tx_id=%d\n", key, tx_id);
         db->lock(key, tx_id);
         db->shards[num]->get(var, r);
+        this->db->vserver->execute(key, chdb_protocol::Get, get_operation(tx_id, key, value), r);
         keys.insert(key);
     } else {
         db->shards[num]->get(var, r);
+        this->db->vserver->execute(key, chdb_protocol::Get, get_operation(tx_id, key, value), r);
     }
 //    printf("tx_region::get completed key=%d tx_id=%d\n", key, tx_id);
     mtx.unlock();
