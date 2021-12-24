@@ -1,7 +1,6 @@
 #include "ch_db.h"
 
 int view_server::execute(unsigned int query_key, unsigned int proc, const chdb_protocol::operation_var &var, int &r) {
-    // TODO: Your code here
     int base_port = this->node->port();
     int shard_offset = this->dispatch(query_key, shard_num());
 
