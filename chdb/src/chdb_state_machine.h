@@ -17,6 +17,7 @@ public:
         command_type tp;
 
         bool done;
+        bool succ;
         std::mutex mtx; // protect the struct
         std::condition_variable cv; // notify the caller
     };
@@ -33,7 +34,6 @@ public:
     command_type cmd_tp;
     int key, value, tx_id;
     std::shared_ptr <result> res;
-    std::map<int, int> store;
 
 
     virtual int size() const override {
@@ -65,4 +65,6 @@ public:
     // Apply the snapshot to the state machine.
     // In Chdb, you don't need to implement this function
     virtual void apply_snapshot(const std::vector<char> &) {}
+
+    std::map<int, int> store;
 };

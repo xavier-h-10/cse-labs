@@ -17,6 +17,7 @@ int tx_region::put(const int key, const int val) {
 //        printf("tx_region::lock, key=%d tx_id=%d\n", key, tx_id);
         db->lock(key, tx_id);
         db->shards[num]->put(var, r);
+     //   this->db->vserver->execute(key,chdb_protocol::Put,chdb_protocol::operation_var(tx_id,key,val),r);
         keys.insert(key);
     } else {
         db->shards[num]->put(var, r);

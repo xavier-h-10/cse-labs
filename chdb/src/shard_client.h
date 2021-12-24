@@ -49,10 +49,15 @@ public:
         this->view_server_port = server_port;
     }
 
+
     int dummy(chdb_protocol::operation_var var, int &r) {
         printf("Receive dummy Request! tx id:%d\n", var.tx_id);
         r = var.tx_id;
         return 0;
+    }
+
+    inline void check_state() {
+        f = (primary_replica == 0);
     }
 
     int put(chdb_protocol::operation_var var, int &r);
@@ -92,6 +97,7 @@ public:
     }
 
     inline int get_store_id(int tx_id) {
+        if (tx_id < 0) return primary_replica;
         return (tx_id) % (replica_num - 1) + 1;
     }
 
@@ -104,6 +110,8 @@ public:
 //    int replica_num = 5;
     int replica_num = 100;
     std::mutex mtx;
+
+    bool f;
 
     // prepare state
     std::map<int, bool> prepare_state;

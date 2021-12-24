@@ -82,4 +82,12 @@ private:
     std::set<int> keys;
 
     bool is_read_only;
+
+    inline chdb_protocol::operation_var get_operation(int tx_id, int key, int val) {
+        chdb_protocol::operation_var tmp;
+        tmp.tx_id = tx_id;
+        tmp.key = key;
+        tmp.value = val;
+        return tmp;
+    }
 };

@@ -3,6 +3,7 @@
 
 int shard_client::put(chdb_protocol::operation_var var, int &r) {
     mtx.lock();
+    check_state();
     int store_id = get_store_id(var.tx_id);
     store[store_id][var.key] = var.value;
 
@@ -12,6 +13,7 @@ int shard_client::put(chdb_protocol::operation_var var, int &r) {
 
 int shard_client::get(chdb_protocol::operation_var var, int &r) {
     mtx.lock();
+    check_state();
     int store_id = get_store_id(var.tx_id);
     if(store[store_id].find(var.key)!=store[store_id].end()) {
         r=store[store_id][var.key];
@@ -27,6 +29,7 @@ int shard_client::get(chdb_protocol::operation_var var, int &r) {
 
 int shard_client::commit(chdb_protocol::commit_var var, int &r) {
     mtx.lock();
+    check_state();
     int tx_id = var.tx_id;
     int store_id = get_store_id(tx_id);
     for (auto &kv: store[store_id]) {
@@ -49,7 +52,7 @@ int shard_client::rollback(chdb_protocol::rollback_var var, int &r) {
 }
 
 int shard_client::check_prepare_state(chdb_protocol::check_prepare_state_var var, int &r) {
-    int tx_id = var.tx_id;
+//    int tx_id = var.tx_id;
 //    if (!active || prepare_state.find(tx_id) == prepare_state.end() || prepare_state[tx_id] == false) {
 //        r = chdb_protocol::prepare_not_ok;
 //    } else {

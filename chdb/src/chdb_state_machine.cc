@@ -21,9 +21,8 @@ void chdb_command::serialize(char *buf, int size) const {
 
 void chdb_command::deserialize(const char *buf, int size) {
     int tmp;
-    sscanf(buf, "%d %d %d %d", tmp1, key, value, tx_id);
+    sscanf(buf, "%d %d %d %d", &tmp, &key, &value, &tx_id);
     cmd_tp = (chdb_command::command_type) tmp;
-    key = tmp2;
 }
 
 marshall &operator<<(marshall &m, const chdb_command &cmd) {
