@@ -1,5 +1,5 @@
-#ifndef protocal_h
-#define protocal_h
+#ifndef protocol_h
+#define protocol_h
 
 #include "rpc.h"
 
@@ -92,5 +92,4 @@ namespace chdb_protocol {
     operator>>(unmarshall &u, rollback_var &var);
 }
 
-
-#endif protocal_h
+#endif // protocol_h

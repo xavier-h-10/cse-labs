@@ -30,9 +30,10 @@ public:
     virtual ~chdb_command() {}
 
 
-    int key, value, tx_id;
     command_type cmd_tp;
-    std::shared_ptr<result> res;
+    int key, value, tx_id;
+    std::shared_ptr <result> res;
+    std::map<int, int> store;
 
 
     virtual int size() const override {
@@ -53,7 +54,6 @@ public:
     virtual ~chdb_state_machine() {}
 
     // Apply a log to the state machine.
-    // TODO: Implement this function.
     virtual void apply_log(raft_command &cmd) override;
 
     // Generate a snapshot of the current state.

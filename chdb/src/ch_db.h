@@ -16,8 +16,8 @@ using chdb_raft_group = raft_group<chdb_state_machine, chdb_command>;
  * */
 class view_server {
 public:
-    rpc_node *node;
     shard_dispatch dispatch;            /* Dispatch requests to the target shard */
+    rpc_node *node;
     chdb_raft_group *raft_group;
 
     view_server(const int base_port,
@@ -130,10 +130,10 @@ public:
         return res;
     }
 
+    int max_tx_id;
     view_server *vserver;
 
     std::vector<shard_client *> shards;
-    int max_tx_id;
     std::mutex tx_id_mtx;
     std::mutex map_mtx;
 

@@ -2,7 +2,6 @@
 #include <cstdio>
 
 int tx_region::put(const int key, const int val) {
-    // TODO: Your code here
     mtx.lock();
     is_read_only = false;
     int shard_num = db->shards.size();
@@ -28,7 +27,6 @@ int tx_region::put(const int key, const int val) {
 }
 
 int tx_region::get(const int key) {
-    // TODO: Your code here
     mtx.lock();
     int shard_num = db->shards.size();
     int num = db->vserver->dispatch(key, shard_num) - 1;
@@ -96,7 +94,6 @@ int tx_region::tx_commit() {
 }
 
 int tx_region::tx_abort() {
-    // TODO: Your code here
     mtx.lock();
     printf("tx[%d] abort\n", tx_id);
     chdb_protocol::rollback_var var;
